@@ -1,0 +1,164 @@
+[gd_scene load_steps=15 format=2]
+
+[ext_resource path="res://assets/back2.png" type="Texture" id=1]
+[ext_resource path="res://Sprite.gd" type="Script" id=2]
+[ext_resource path="res://background.gd" type="Script" id=3]
+[ext_resource path="res://assets/back.png" type="Texture" id=4]
+
+[sub_resource type="Shader" id=8]
+code = "shader_type canvas_item;
+
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+
+uniform float mix_factor = 0.f;
+
+void fragment() {
+	COLOR = mix(texture(tex1, UV), texture(tex2, UV), mix_factor);
+}"
+
+[sub_resource type="ShaderMaterial" id=9]
+shader = SubResource( 8 )
+shader_param/mix_factor = 0.0
+shader_param/tex1 = ExtResource( 4 )
+shader_param/tex2 = ExtResource( 1 )
+
+[sub_resource type="ExternalTexture" id=10]
+size = Vector2( 1920, 1080 )
+
+[sub_resource type="Shader" id=1]
+code = "shader_type canvas_item;
+
+uniform sampler2D noise;
+uniform vec2 scroll = vec2(.25, .25);
+
+uniform float influence = 0.f;
+uniform float offset = 0.f;
+
+void fragment() {
+	vec2 ts = TEXTURE_PIXEL_SIZE;
+	ts = vec2(1.f / ts.x, 1.f / ts.y);
+	
+	float scale = ts.x / ts.y;
+	
+	vec2 _uv = UV + scroll * TIME;
+	_uv.x *= scale;
+	
+	COLOR = texture(noise, _uv);
+	COLOR = texture(SCREEN_TEXTURE, SCREEN_UV + influence * texture(noise, _uv).rr - vec2(offset));
+	// COLOR = texture(SCREEN_TEXTURE, SCREEN_UV + vec2(.01, .01));
+}"
+
+[sub_resource type="OpenSimplexNoise" id=3]
+seed = 2
+octaves = 6
+period = 118.6
+persistence = 0.427
+lacunarity = 4.0
+
+[sub_resource type="NoiseTexture" id=4]
+width = 1024
+height = 1024
+seamless = true
+noise = SubResource( 3 )
+
+[sub_resource type="ShaderMaterial" id=2]
+shader = SubResource( 1 )
+shader_param/scroll = Vector2( 0.25, 0.25 )
+shader_param/influence = 0.0
+shader_param/offset = 0.0
+shader_param/noise = SubResource( 4 )
+
+[sub_resource type="ExternalTexture" id=5]
+size = Vector2( 1920, 1080 )
+
+[sub_resource type="Animation" id=6]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/path = NodePath("CanvasLayer/HScrollBar:value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ 0.0 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("background:mix")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ 0.0 ]
+}
+
+[sub_resource type="Animation" id=7]
+resource_name = "fade"
+length = 3.0
+tracks/0/type = "value"
+tracks/0/path = NodePath("CanvasLayer/HScrollBar:value")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 1, 2, 3 ),
+"transitions": PoolRealArray( 3.03144, 1, 0.307786, 1 ),
+"update": 0,
+"values": [ 0.0, 1.0, 1.0, 0.0 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("background:mix")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 1, 2, 3 ),
+"transitions": PoolRealArray( 1, 1, 1, 1 ),
+"update": 0,
+"values": [ 0.0, 0.0, 1.0, 1.0 ]
+}
+
+[node name="scene" type="Node2D"]
+
+[node name="background" type="Sprite" parent="."]
+material = SubResource( 9 )
+texture = SubResource( 10 )
+centered = false
+script = ExtResource( 3 )
+
+[node name="Sprite" type="Sprite" parent="."]
+material = SubResource( 2 )
+texture = SubResource( 5 )
+centered = false
+script = ExtResource( 2 )
+__meta__ = {
+"_edit_ik_": true
+}
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="HScrollBar" type="HScrollBar" parent="CanvasLayer"]
+visible = false
+margin_left = 20.0
+margin_top = 21.0
+margin_right = 411.0
+margin_bottom = 46.0
+rect_scale = Vector2( 1.5, 1.5 )
+min_value = -2.0
+max_value = 2.0
+custom_step = -0.05
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+anims/RESET = SubResource( 6 )
+anims/fade = SubResource( 7 )
+
+[connection signal="value_changed" from="CanvasLayer/HScrollBar" to="Sprite" method="_on_HScrollBar_value_changed"]
